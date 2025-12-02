@@ -148,8 +148,7 @@ public:
     bool prvVerify(const AuditDataPackPtr& input) override;
 
     static AuditStrategy* create(){
-        static NewAuditStrategy strategy;
-        return &strategy;
+        return new NewAuditStrategy();
     }
 
 protected:
@@ -166,7 +165,7 @@ protected:
     shared_ptr<CryptoStrategy> _crypto_strategy; /**< Shared pointer to the cryptographic strategy implementation. */
 };
 
-extern "C" AuditStrategy* create_algorithm(){
+extern "C" AuditStrategy* create_audit_strategy(){
     return NewAuditStrategy::create();
 }
 
