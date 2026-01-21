@@ -19,7 +19,7 @@
  * @file new_audit_strategy.h
  * @brief Provides new audit algorithms and related strategies.
  * @details This file defines constants, tags, challenges, proofs, and audit strategies
- *          under the namespace DIAS::Algorithms::Audit::NewAuditStrategy.
+ *          under the namespace CAMatrix::Algorithms::Audit::NewAuditStrategy.
  * @author Dylan Liu
  * @version 1.0.0
  * @date 2025-12-01
@@ -29,21 +29,29 @@
 #ifndef NEW_AUDIT_STRATEGY_H
 #define NEW_AUDIT_STRATEGY_H
 
-#include "AuditEngineLib/algorithms/crypto/sm9.h"
-#include "AuditEngineLib/interfaces/audit/audit_strategy.h"
+#include "ChordAuditMatrixLib/algorithms/crypto/sm9.h"
+#include "ChordAuditMatrixLib/interfaces/audit/audit_strategy.h"
 #include <random>
 #include <set>
 
-using namespace DIAS::Interfaces::Audit;
+using Capabilities = CAMatrix::Interfaces::Audit::Capabilities;
+using CryptoStrategy = CAMatrix::Interfaces::Crypto::CryptoStrategy;
+using AuditStrategy = CAMatrix::Interfaces::Audit::AuditStrategy;
+using CryptoAlgorithmPtr = CAMatrix::Interfaces::Crypto::CryptoAlgorithmPtr;
+using AuditDataPackPtr = CAMatrix::Interfaces::Audit::AuditDataPackPtr;
+using TagPtr = CAMatrix::Interfaces::Audit::TagPtr;
+using CryptoPack = CAMatrix::Interfaces::Crypto::CryptoPack;
+using AuditArray = CAMatrix::Interfaces::Audit::AuditArray;
 
 /**
- * @namespace DIAS::Algorithms::Audit::AuditStrategy
+ * @namespace CAMatrix::Algorithms::Audit::AuditStrategy
  * @brief Provides new audit algorithms and related constants.
  */
-namespace DIAS::Algorithms::Audit::NewAuditStrategy {
+namespace CAMatrix::Algorithms::Audit::NewAuditStrategy {
 
 const size_t fileBlockSize = 1024; /**< Constant representing the block size used for file operations (in bytes). */
-const size_t segmentSize   = sizeof(sm9_z256_t); /**< Constant representing the segment size based on sm9_z256_t type (in bytes). */
+const size_t segmentSize
+    = sizeof(sm9_z256_t); /**< Constant representing the segment size based on sm9_z256_t type (in bytes). */
 
 /**
  * @class NewAuditStrategy
@@ -61,14 +69,14 @@ public:
      *
      * @return string, Name of the strategy.
      */
-    string name() const override { return "new"; }
+    std::string name() const override { return "new"; }
 
     /**
      * @brief Returns the version of the strategy.
      *
      * @return string, Version string.
      */
-    string version() const override { return "1.0"; }
+    std::string version() const override { return "1.0"; }
 
     /**
      * @brief Returns the capabilities of the strategy.
@@ -82,14 +90,14 @@ public:
      *
      * @param algorithm [IN] Cryptographic algorithm pointer.
      */
-    void setAlgorithm(const CryptoAlgorithmPtr& algorithm) override;
+    void setAlgorithm(CryptoAlgorithmPtr algorithm) override;
 
     /**
      * @brief Sets the cryptographic strategy.
      *
      * @param strategy [IN] Shared pointer to cryptographic strategy.
      */
-    void setAlgoStrategy(const shared_ptr<CryptoStrategy>& strategy) override;
+    void setAlgoStrategy(std::shared_ptr<CryptoStrategy> strategy) override;
 
     /**
      * @brief Initializes the algorithm with input data.
@@ -116,16 +124,15 @@ public:
     AuditDataPackPtr tagsGen(const AuditDataPackPtr& input) override;
 
     /**
-     * @brief Maintains audit data (not supported).
-     *
+     * @brief Maintains audit data.
      * @param input [IN] Input data pack.
-     * @return AuditDataPackPtr, Throws logic_error.
+     * @return AuditDataPackPtr, Not returned (always throws).
+     * @throws std::logic_error, Always thrown because maintenance is not supported.
      */
-    AuditDataPackPtr maintaince(const AuditDataPackPtr& input) override;
-
+    AuditDataPackPtr maintenance(const AuditDataPackPtr& input) override;
+    
     /**
      * @brief Generates challenges from input data.
-     *
      * @param input [IN] Input data pack.
      * @return AuditDataPackPtr, Generated challenges data pack.
      */
@@ -147,10 +154,6 @@ public:
      */
     bool prvVerify(const AuditDataPackPtr& input) override;
 
-    static AuditStrategy* create(){
-        return new NewAuditStrategy();
-    }
-
 protected:
     /**
      * @brief Generates a tag from data and cryptographic parameters.
@@ -162,13 +165,16 @@ protected:
     TagPtr tagGen(AuditArray& data, const CryptoPack& params);
 
     CryptoAlgorithmPtr _algorithm; /**< Pointer to the cryptographic algorithm used in the strategy. */
-    shared_ptr<CryptoStrategy> _crypto_strategy; /**< Shared pointer to the cryptographic strategy implementation. */
+    std::shared_ptr<CryptoStrategy> _crypto_strategy; /**< Shared pointer to the cryptographic strategy implementation. */
 };
 
-extern "C" AuditStrategy* create_audit_strategy(){
-    return NewAuditStrategy::create();
+extern "C" AuditStrategy* create_audit_strategy() noexcept { return new NewAuditStrategy(); }
+
+extern "C" void destroy_audit_strategy(AuditStrategy* p) noexcept
+{
+    delete p; // allowed because this function is a friend of AuditStrategy
 }
 
-} // namespace DIAS::Algorithms::Audit::NewAuditStrategy
+} // namespace CAMatrix::Algorithms::Audit::NewAuditStrategy
 
 #endif // NEW_AUDIT_STRATEGY_H

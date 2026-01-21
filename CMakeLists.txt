@@ -4,7 +4,7 @@ project(AuditStrategyTemplate VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_subdirectory(3rdparty/AuditEngine/lib)
+add_subdirectory(3rdparty/ChordAuditMatrix/lib EXCLUDE_FROM_ALL)
 
 set(SOURCE
   source/new_audit_strategy.cpp
@@ -20,7 +20,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
 endif()
 
 add_library(${PROJECT_NAME} SHARED ${SOURCE})
-target_link_libraries(${PROJECT_NAME} PRIVATE AuditEngineLib)
+target_link_libraries(${PROJECT_NAME} PRIVATE ChordAuditMatrixLib)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR} SOVERSION ${PROJECT_VERSION_MAJOR})

@@ -26,42 +26,42 @@
  */
 
 #include "NewAuditStrategy/new_audit_strategy.h"
-#include "AuditEngineLib/strategies/crypto/sm9_strategy.h"
+#include "ChordAuditMatrixLib/strategies/crypto/sm9_strategy.h"
 
 #include <iostream>
-using namespace std;
-using namespace DIAS::Interfaces::Audit;
-using namespace DIAS::Algorithms::Crypto::SM9;
 
-namespace DIAS::Algorithms::Audit::NewAuditStrategy {
+using SM9Algorithm = CAMatrix::Algorithms::Crypto::SM9::SM9Algorithm;
+using SM9CryptoStrategy = CAMatrix::Algorithms::Crypto::SM9::SM9CryptoStrategy;
+using AuditDataPack = CAMatrix::Interfaces::Audit::AuditDataPack;
+namespace CAMatrix::Algorithms::Audit::NewAuditStrategy {
 
 NewAuditStrategy::NewAuditStrategy()
 {
-    _algorithm = make_shared<SM9Algorithm>();
-    _crypto_strategy = make_shared<SM9CryptoStrategy>();
+    _algorithm = std::make_shared<SM9Algorithm>();
+    _crypto_strategy = std::make_shared<SM9CryptoStrategy>();
     _algorithm->setCryptoStrategy(_crypto_strategy);
 }
 
-void NewAuditStrategy::setAlgorithm(const CryptoAlgorithmPtr& algorithm)
+void NewAuditStrategy::setAlgorithm(CryptoAlgorithmPtr algorithm)
 {
     _algorithm = algorithm;
     _algorithm->setCryptoStrategy(_crypto_strategy);
 }
 
-void NewAuditStrategy::setAlgoStrategy(const shared_ptr<CryptoStrategy>& strategy)
+void NewAuditStrategy::setAlgoStrategy(std::shared_ptr<CryptoStrategy> strategy)
 {
     _crypto_strategy = strategy;
 }
 
 AuditDataPackPtr NewAuditStrategy::algoInit(const AuditDataPackPtr& input)
 {
-    AuditDataPackPtr output = make_shared<AuditDataPack>();
+    AuditDataPackPtr output = std::make_shared<AuditDataPack>();
     return output;
 }
 
 AuditDataPackPtr NewAuditStrategy::dataIng(const AuditDataPackPtr& input)
 {
-    AuditDataPackPtr output = make_shared<AuditDataPack>();
+    AuditDataPackPtr output = std::make_shared<AuditDataPack>();
     return output;
 }
 
@@ -72,25 +72,25 @@ TagPtr NewAuditStrategy::tagGen(AuditArray& data, const CryptoPack& params)
 
 AuditDataPackPtr NewAuditStrategy::tagsGen(const AuditDataPackPtr& input)
 {
-    AuditDataPackPtr output = make_shared<AuditDataPack>();
+    AuditDataPackPtr output = std::make_shared<AuditDataPack>();
     return output;
 }
 
-AuditDataPackPtr NewAuditStrategy::maintaince(const AuditDataPackPtr& input)
+AuditDataPackPtr NewAuditStrategy::maintenance(const AuditDataPackPtr& input)
 {
-    AuditDataPackPtr output = make_shared<AuditDataPack>();
+    AuditDataPackPtr output = std::make_shared<AuditDataPack>();
     return output;
 }
 
 AuditDataPackPtr NewAuditStrategy::chlgGen(const AuditDataPackPtr& input)
 {
-    AuditDataPackPtr output = make_shared<AuditDataPack>();
+    AuditDataPackPtr output = std::make_shared<AuditDataPack>();
     return output;
 }
 
 AuditDataPackPtr NewAuditStrategy::prvGen(const AuditDataPackPtr& input)
 {
-    AuditDataPackPtr output = make_shared<AuditDataPack>();
+    AuditDataPackPtr output = std::make_shared<AuditDataPack>();
     return output;
 }
 
