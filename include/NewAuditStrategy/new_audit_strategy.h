@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025, Dylan Liu
+ * Copyright (C) 2021-2026, Dylan Liu
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,164 +17,124 @@
 
 /**
  * @file new_audit_strategy.h
- * @brief Provides new audit algorithms and related strategies.
- * @details This file defines constants, tags, challenges, proofs, and audit strategies
- *          under the namespace CAMatrix::Algorithms::Audit::NewAuditStrategy.
+ * @brief Template for implementing a custom audit strategy as a shared library plugin.
+ * @details This file provides a skeleton implementation of a static audit strategy
+ *          that can be loaded at runtime by the ChordAuditMatrix hot-load system.
+ *
+ *          The template inherits from `StaticAuditStrategy` and implements all
+ *          required virtual methods of the 7-stage PDP pipeline with empty stubs.
+ *          Users should fill in the actual cryptographic logic for their custom
+ *          audit algorithm.
+ *
+ *          The C-linkage factory functions `create_audit_strategy()` and
+ *          `destroy_audit_strategy()` are automatically exported for dynamic
+ *          loading via `dlopen`/`dlsym`.
+ *
  * @author Dylan Liu
- * @version 1.0.0
- * @date 2025-12-01
- * @copyright Copyright (C) 2021 - 2025, Dylan Liu
+ * @version 2.0.0
+ * @date 2026-07-12
+ * @copyright Copyright (C) 2021 - 2026, Dylan Liu
  */
 
 #ifndef NEW_AUDIT_STRATEGY_H
 #define NEW_AUDIT_STRATEGY_H
 
-#include "ChordAuditMatrixLib/algorithms/crypto/sm9.h"
-#include "ChordAuditMatrixLib/interfaces/audit/audit_strategy.h"
-#include <random>
-#include <set>
+#include "ChordAuditMatrixLib/interfaces/audit/static_strategy.h"
+#include "ChordAuditMatrixLib/interfaces/audit/artifact_factory.h"
+#include "ChordAuditMatrixLib/interfaces/audit/messages/request_result.h"
+#include "ChordAuditMatrixLib/interfaces/audit/messages/raw_input.h"
+#include "ChordAuditMatrixLib/interfaces/audit/operation_context.h"
 
-using Capabilities = CAMatrix::Interfaces::Audit::Capabilities;
-using CryptoStrategy = CAMatrix::Interfaces::Crypto::CryptoStrategy;
-using AuditStrategy = CAMatrix::Interfaces::Audit::AuditStrategy;
-using CryptoAlgorithmPtr = CAMatrix::Interfaces::Crypto::CryptoAlgorithmPtr;
-using AuditDataPackPtr = CAMatrix::Interfaces::Audit::AuditDataPackPtr;
-using TagPtr = CAMatrix::Interfaces::Audit::TagPtr;
-using CryptoPack = CAMatrix::Interfaces::Crypto::CryptoPack;
-using AuditArray = CAMatrix::Interfaces::Audit::AuditArray;
+#include <memory>
+#include <stdexcept>
 
-/**
- * @namespace CAMatrix::Algorithms::Audit::AuditStrategy
- * @brief Provides new audit algorithms and related constants.
- */
-namespace CAMatrix::Algorithms::Audit::NewAuditStrategy {
-
-const size_t fileBlockSize = 1024; /**< Constant representing the block size used for file operations (in bytes). */
-const size_t segmentSize
-    = sizeof(sm9_z256_t); /**< Constant representing the segment size based on sm9_z256_t type (in bytes). */
+namespace CAMatrix::Audit::Strategies {
 
 /**
  * @class NewAuditStrategy
- * @brief Implements the new audit strategy for audits.
+ * @brief Skeleton implementation of a custom static audit strategy.
+ * @details Users should inherit from `StaticAuditStrategy` (for static PDP schemes)
+ *          or `DynamicAuditStrategy` (for dynamic/updatable schemes) and implement
+ *          all pure virtual methods of the 7-stage pipeline:
+ *
+ *          1. `initializeAlgorithm()` — Set up algorithm parameters and public keys
+ *          2. `generateKeys()`       — Generate key pairs (sk, pk)
+ *          3. `generateTags()`       — Compute authenticator tags σ_i for each block
+ *          4. `generateChallenges()` — TPA generates random challenge set
+ *          5. `generateProofs()`     — CSP computes proof from challenged blocks
+ *          6. `verifyProofs()`       — TPA verifies proof against tags and challenges
+ *
+ *          For dynamic strategies, also implement:
+ *          - `maintenance()` — Handle Insert/Update/Delete operations on blocks
+ *
+ *          Each stage uses strongly-typed Request/Result structs instead of
+ *          the legacy AuditDataPack variant map.
  */
-class NewAuditStrategy : public AuditStrategy {
+class NewAuditStrategy : public CAMatrix::Audit::Core::StaticAuditStrategy {
 public:
-    /**
-     * @brief Constructs the audit strategy.
-     */
     NewAuditStrategy();
+    ~NewAuditStrategy() override;
 
-    /**
-     * @brief Returns the name of the strategy.
-     *
-     * @return string, Name of the strategy.
-     */
-    std::string name() const override { return "new"; }
+    // ── PluggableAlgorithm interface ──
 
-    /**
-     * @brief Returns the version of the strategy.
-     *
-     * @return string, Version string.
-     */
-    std::string version() const override { return "1.0"; }
+    std::string algorithmType() const override { return "NewAudit"; }
+    std::string version() const override { return "1.0.0"; }
+    CAMatrix::Audit::Messages::Capabilities caps() const override;
 
-    /**
-     * @brief Returns the capabilities of the strategy.
-     *
-     * @return Capabilities, Supported capabilities.
-     */
-    Capabilities caps() const override { return Capabilities::BatchVerify; }
+    // ── AuditStrategy interface: algorithm injection ──
 
-    /**
-     * @brief Sets the cryptographic algorithm.
-     *
-     * @param algorithm [IN] Cryptographic algorithm pointer.
-     */
-    void setAlgorithm(CryptoAlgorithmPtr algorithm) override;
+    void setAlgorithm(CAMatrix::Crypto::CryptoGeneralAlgorithmPtr algorithm) override;
 
-    /**
-     * @brief Sets the cryptographic strategy.
-     *
-     * @param strategy [IN] Shared pointer to cryptographic strategy.
-     */
-    void setAlgoStrategy(std::shared_ptr<CryptoStrategy> strategy) override;
+    // ── 7-stage PDP pipeline ──
 
-    /**
-     * @brief Initializes the algorithm with input data.
-     *
-     * @param input [IN] Input data pack.
-     * @return AuditDataPackPtr, Initialized data pack.
-     */
-    AuditDataPackPtr algoInit(const AuditDataPackPtr& input) override;
+    CAMatrix::Audit::Messages::InitializeAlgorithmResult initializeAlgorithm(
+        const CAMatrix::Audit::Messages::InitializeAlgorithmRequest& input) override;
 
-    /**
-     * @brief Processes input data.
-     *
-     * @param input [IN] Input data pack.
-     * @return AuditDataPackPtr, Processed data pack.
-     */
-    AuditDataPackPtr dataIng(const AuditDataPackPtr& input) override;
+    CAMatrix::Audit::Messages::GenerateKeysResult generateKeys(
+        const CAMatrix::Audit::Messages::GenerateKeysRequest& input) override;
 
-    /**
-     * @brief Generates tags from input data.
-     *
-     * @param input [IN] Input data pack.
-     * @return AuditDataPackPtr, Generated tags data pack.
-     */
-    AuditDataPackPtr tagsGen(const AuditDataPackPtr& input) override;
+    CAMatrix::Audit::Messages::GenerateTagsResult generateTags(
+        const CAMatrix::Audit::Messages::GenerateTagsRequest& input) override;
 
-    /**
-     * @brief Maintains audit data.
-     * @param input [IN] Input data pack.
-     * @return AuditDataPackPtr, Not returned (always throws).
-     * @throws std::logic_error, Always thrown because maintenance is not supported.
-     */
-    AuditDataPackPtr maintenance(const AuditDataPackPtr& input) override;
-    
-    /**
-     * @brief Generates challenges from input data.
-     * @param input [IN] Input data pack.
-     * @return AuditDataPackPtr, Generated challenges data pack.
-     */
-    AuditDataPackPtr chlgGen(const AuditDataPackPtr& input) override;
+    CAMatrix::Audit::Messages::GenerateChallengesResult generateChallenges(
+        const CAMatrix::Audit::Messages::GenerateChallengesRequest& input) override;
 
-    /**
-     * @brief Generates proofs from input data.
-     *
-     * @param input [IN] Input data pack.
-     * @return AuditDataPackPtr, Generated proofs data pack.
-     */
-    AuditDataPackPtr prvGen(const AuditDataPackPtr& input) override;
+    CAMatrix::Audit::Messages::GenerateProofsResult generateProofs(
+        const CAMatrix::Audit::Messages::GenerateProofsRequest& input) override;
 
-    /**
-     * @brief Verifies proofs from input data.
-     *
-     * @param input [IN] Input data pack.
-     * @return bool, True if verification succeeds, false otherwise.
-     */
-    bool prvVerify(const AuditDataPackPtr& input) override;
+    CAMatrix::Audit::Messages::VerifyProofsResult verifyProofs(
+        const CAMatrix::Audit::Messages::VerifyProofsRequest& input) override;
+
+    // ── Request creation (RawInput → strongly-typed) ──
+
+    CAMatrix::Audit::Messages::AuditRequestVariantPtr createRequest(
+        CAMatrix::Audit::Core::AuditOperation op,
+        const CAMatrix::Audit::Core::AuditOperationContext& context,
+        const CAMatrix::Audit::Messages::RawInput& rawInput = CAMatrix::Audit::Messages::RawInput()) override;
 
 protected:
-    /**
-     * @brief Generates a tag from data and cryptographic parameters.
-     *
-     * @param data [IN] Input audit data array.
-     * @param params [IN] Cryptographic parameters.
-     * @return TagPtr, Generated tag.
-     */
-    TagPtr tagGen(AuditArray& data, const CryptoPack& params);
+    // ── Artifact factory ──
 
-    CryptoAlgorithmPtr _algorithm; /**< Pointer to the cryptographic algorithm used in the strategy. */
-    std::shared_ptr<CryptoStrategy> _crypto_strategy; /**< Shared pointer to the cryptographic strategy implementation. */
+    const CAMatrix::Audit::Core::AuditStrategyArtifactFactory& artifactFactory() const override;
+
+private:
+    CAMatrix::Crypto::CryptoGeneralAlgorithmPtr algorithm_;
+    std::unique_ptr<CAMatrix::Audit::Core::AuditStrategyArtifactFactory> artifactFactory_;
 };
 
-extern "C" AuditStrategy* create_audit_strategy() noexcept { return new NewAuditStrategy(); }
+} // namespace CAMatrix::Audit::Strategies
 
-extern "C" void destroy_audit_strategy(AuditStrategy* p) noexcept
+// ── C-linkage factory functions for dynamic loading ──
+// These are resolved by AlgorithmRegistry via dlsym/GetProcAddress.
+
+extern "C" CAMatrix::Audit::Core::AuditStrategy* create_audit_strategy() noexcept
+{
+    return new CAMatrix::Audit::Strategies::NewAuditStrategy();
+}
+
+extern "C" void destroy_audit_strategy(CAMatrix::Audit::Core::AuditStrategy* p) noexcept
 {
     delete p; // allowed because this function is a friend of AuditStrategy
 }
-
-} // namespace CAMatrix::Algorithms::Audit::NewAuditStrategy
 
 #endif // NEW_AUDIT_STRATEGY_H

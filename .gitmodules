@@ -1,4 +1,4 @@
 
-[submodule "3rdparty/ChordAuditMatrix"]
-	path = 3rdparty/ChordAuditMatrix
-	url = git@github.com:mentalfl0w/ChordAuditMatrix.git
+[submodule "3rdparty/CoreLib"]
+	path = 3rdparty/CoreLib
+	url = git@github.com:ChordAuditMatrix/CoreLib.git

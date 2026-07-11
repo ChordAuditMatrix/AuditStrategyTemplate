@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025, Dylan Liu
+ * Copyright (C) 2021-2026, Dylan Liu
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,86 +17,121 @@
 
 /**
  * @file new_audit_strategy.cpp
- * @brief include the class of the simple static audit strategy
- * @details include the class of the simple static audit strategy
+ * @brief Skeleton implementation of a custom static audit strategy.
+ * @details All pipeline stages return default-constructed results as stubs.
+ *          Users should replace these with actual cryptographic logic.
  * @author Dylan Liu
- * @version 1.0.0
- * @date 2025-10-28
- * @copyright Copyright (C) 2021 - 2025, Dylan Liu
+ * @version 2.0.0
+ * @date 2026-07-12
+ * @copyright Copyright (C) 2021 - 2026, Dylan Liu
  */
 
 #include "NewAuditStrategy/new_audit_strategy.h"
-#include "ChordAuditMatrixLib/strategies/crypto/sm9_strategy.h"
 
-#include <iostream>
+#include <spdlog/spdlog.h>
 
-using SM9Algorithm = CAMatrix::Algorithms::Crypto::SM9::SM9Algorithm;
-using SM9CryptoStrategy = CAMatrix::Algorithms::Crypto::SM9::SM9CryptoStrategy;
-using AuditDataPack = CAMatrix::Interfaces::Audit::AuditDataPack;
-namespace CAMatrix::Algorithms::Audit::NewAuditStrategy {
+namespace CAMatrix::Audit::Strategies {
+
+using namespace CAMatrix::Audit::Messages;
+using namespace CAMatrix::Audit::Core;
+
+// ── Constructor / Destructor ──
 
 NewAuditStrategy::NewAuditStrategy()
+    : artifactFactory_(nullptr) // TODO: create a concrete AuditStrategyArtifactFactory
 {
-    _algorithm = std::make_shared<SM9Algorithm>();
-    _crypto_strategy = std::make_shared<SM9CryptoStrategy>();
-    _algorithm->setCryptoStrategy(_crypto_strategy);
+    spdlog::info("NewAuditStrategy constructed (stub)");
 }
 
-void NewAuditStrategy::setAlgorithm(CryptoAlgorithmPtr algorithm)
+NewAuditStrategy::~NewAuditStrategy() = default;
+
+// ── Capabilities ──
+
+Capabilities NewAuditStrategy::caps() const
 {
-    _algorithm = algorithm;
-    _algorithm->setCryptoStrategy(_crypto_strategy);
+    return Capabilities::BatchVerify;
 }
 
-void NewAuditStrategy::setAlgoStrategy(std::shared_ptr<CryptoStrategy> strategy)
+// ── Algorithm injection ──
+
+void NewAuditStrategy::setAlgorithm(CAMatrix::Crypto::CryptoGeneralAlgorithmPtr algorithm)
 {
-    _crypto_strategy = strategy;
+    algorithm_ = std::move(algorithm);
 }
 
-AuditDataPackPtr NewAuditStrategy::algoInit(const AuditDataPackPtr& input)
+// ── 7-stage PDP pipeline (stubs) ──
+
+InitializeAlgorithmResult NewAuditStrategy::initializeAlgorithm(
+    const InitializeAlgorithmRequest& /*input*/)
 {
-    AuditDataPackPtr output = std::make_shared<AuditDataPack>();
-    return output;
+    // TODO: Implement algorithm initialization (set up public params, system params, etc.)
+    spdlog::warn("NewAuditStrategy::initializeAlgorithm() stub — not implemented");
+    return InitializeAlgorithmResult{};
 }
 
-AuditDataPackPtr NewAuditStrategy::dataIng(const AuditDataPackPtr& input)
+GenerateKeysResult NewAuditStrategy::generateKeys(
+    const GenerateKeysRequest& /*input*/)
 {
-    AuditDataPackPtr output = std::make_shared<AuditDataPack>();
-    return output;
+    // TODO: Implement key generation (sk, pk)
+    spdlog::warn("NewAuditStrategy::generateKeys() stub — not implemented");
+    return GenerateKeysResult{};
 }
 
-TagPtr NewAuditStrategy::tagGen(AuditArray& data, const CryptoPack& params)
+GenerateTagsResult NewAuditStrategy::generateTags(
+    const GenerateTagsRequest& /*input*/)
 {
-    return nullptr;
+    // TODO: Implement tag generation (σ_i = [sk]·[H₁(fileId‖i) + m_i·u])
+    spdlog::warn("NewAuditStrategy::generateTags() stub — not implemented");
+    return GenerateTagsResult{};
 }
 
-AuditDataPackPtr NewAuditStrategy::tagsGen(const AuditDataPackPtr& input)
+GenerateChallengesResult NewAuditStrategy::generateChallenges(
+    const GenerateChallengesRequest& /*input*/)
 {
-    AuditDataPackPtr output = std::make_shared<AuditDataPack>();
-    return output;
+    // TODO: Implement challenge generation (random subset + random coefficients)
+    spdlog::warn("NewAuditStrategy::generateChallenges() stub — not implemented");
+    return GenerateChallengesResult{};
 }
 
-AuditDataPackPtr NewAuditStrategy::maintenance(const AuditDataPackPtr& input)
+GenerateProofsResult NewAuditStrategy::generateProofs(
+    const GenerateProofsRequest& /*input*/)
 {
-    AuditDataPackPtr output = std::make_shared<AuditDataPack>();
-    return output;
+    // TODO: Implement proof generation (aggregate challenged blocks + tags)
+    spdlog::warn("NewAuditStrategy::generateProofs() stub — not implemented");
+    return GenerateProofsResult{};
 }
 
-AuditDataPackPtr NewAuditStrategy::chlgGen(const AuditDataPackPtr& input)
+VerifyProofsResult NewAuditStrategy::verifyProofs(
+    const VerifyProofsRequest& /*input*/)
 {
-    AuditDataPackPtr output = std::make_shared<AuditDataPack>();
-    return output;
+    // TODO: Implement proof verification (pairing check)
+    spdlog::warn("NewAuditStrategy::verifyProofs() stub — not implemented");
+    VerifyProofsResult result;
+    result.ok = false;
+    return result;
 }
 
-AuditDataPackPtr NewAuditStrategy::prvGen(const AuditDataPackPtr& input)
+// ── Request creation ──
+
+AuditRequestVariantPtr NewAuditStrategy::createRequest(
+    AuditOperation op,
+    const AuditOperationContext& /*context*/,
+    const RawInput& /*rawInput*/)
 {
-    AuditDataPackPtr output = std::make_shared<AuditDataPack>();
-    return output;
+    // TODO: Implement RawInput → strongly-typed Request conversion
+    spdlog::warn("NewAuditStrategy::createRequest() stub — not implemented for op={}",
+                 static_cast<int>(op));
+    throw std::runtime_error("NewAuditStrategy::createRequest() not implemented");
 }
 
-bool NewAuditStrategy::prvVerify(const AuditDataPackPtr& input)
+// ── Artifact factory ──
+
+const AuditStrategyArtifactFactory& NewAuditStrategy::artifactFactory() const
 {
-    return false;
+    if (!artifactFactory_) {
+        throw std::logic_error("NewAuditStrategy: artifactFactory not initialized");
+    }
+    return *artifactFactory_;
 }
 
-}
+} // namespace CAMatrix::Audit::Strategies
