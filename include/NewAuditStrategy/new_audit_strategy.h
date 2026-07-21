@@ -126,15 +126,24 @@ private:
 
 // ── C-linkage factory functions for dynamic loading ──
 // These are resolved by AlgorithmRegistry via dlsym/GetProcAddress.
-
-extern "C" CAMatrix::Audit::Core::AuditStrategy* create_audit_strategy() noexcept
+//
+// Both create_audit_strategy() and destroy_audit_strategy() are declared
+// inside namespace CAMatrix::Audit::Core in CoreLib's strategy.h, where
+// destroy_audit_strategy() is also declared as a friend of AuditStrategy
+// (so it can access the protected destructor). Defining them in the same
+// namespace here makes the friend declaration apply — GCC enforces this,
+// while MSVC and Clang are more permissive. The `extern "C"` linkage keeps
+// the exported symbol names compatible with dlsym/GetProcAddress.
+namespace CAMatrix::Audit::Core {
+extern "C" AuditStrategy* create_audit_strategy() noexcept
 {
     return new CAMatrix::Audit::Strategies::NewAuditStrategy();
 }
 
-extern "C" void destroy_audit_strategy(CAMatrix::Audit::Core::AuditStrategy* p) noexcept
+extern "C" void destroy_audit_strategy(AuditStrategy* p) noexcept
 {
-    delete p; // allowed because this function is a friend of AuditStrategy
+    delete p;
 }
+} // namespace CAMatrix::Audit::Core
 
 #endif // NEW_AUDIT_STRATEGY_H
